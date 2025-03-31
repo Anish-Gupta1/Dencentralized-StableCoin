@@ -23,7 +23,7 @@
 
 pragma solidity ^0.8.24;
 
-import {DecentralizedStableCoin} from "./DecentralisedStableCoin.sol";
+import {DecentralizedStableCoin} from "./DecentralizedStableCoin.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
@@ -45,6 +45,7 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__TokenNotAllowed();
     error DSCEngine__TransferFailed();
     error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
+    error DSCEngine__MintFailed();
 
     // STATE VARIABLES
     uint256 private constant LIQUIDATION_THRESHOLD = 50;
@@ -121,6 +122,10 @@ contract DSCEngine is ReentrancyGuard {
     function mintDSC(uint256 amountDsctoMint) external moreThanZero(amountDsctoMint) nonReentrant {
         s_DSCMinted[msg.sender] += amountDsctoMint;
         _revertIfHealthFactorIsBroken(msg.sender);
+        bool success = i_dsc.mint(msg.sender, amountDsctoMint);
+        if (!success) {
+            revert DSCEngine__MintFailed();
+        }
     }
 
     function burnDSC() external {}
